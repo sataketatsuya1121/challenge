@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+    # コンテナのサービス名を指定する。
+    apache:
+        # Dockerfileを使っている場合はbuildでディレクトリ指定。オプションでcontext, dockerfileを指定しても良い
+        build: ./docker-apache
+        # これでも可
+        # build:
+        #     context: ./docker-apache
+        #     dockerfile: Dockerfile-alternate
+
+        # コンテナにホストのディレクトリをマウントする。ホスト:ゲストという指定
+        volumes:
+            - ./vm-practice/src/project1:/var/www/html
+        # 同じくポートを指定
+        ports:
+            - 8282:80
+        # depends_onでサービス間に依存関係を持たせる
+        depends_on:
+            - mysql
+
+    php:
+        build: ./docker-php
+        volumes:
+            - ./vm-practice/src/project2/:/var/www/html
+        depends_on:
+            - nginx
+            - postgres
+
+    nginx:
+        # Dockerfileを使わずにdocker hubから直接イメージを構築してコンテナを作成する場合
+        image: nginx:latest
+        ports:
+            - 8383:80
+        volumes:
+            - ./vm-practice/src/project2:/var/www/html
+            - ./docker-nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+    mysql:
+        image: mysql:5.7
+        # dbの環境設定、ReadMeを参照
+        environment:
+            # root passwordの設定はlevelクリアに必須ではないが、記述するのが基本
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_DATABASE=project1
+            - MYSQL_USER=giztech
+            - MYSQL_PASSWORD=gizumo
+
+    postgres:
+        image: postgres:11
+        environment:
+            - POSTGRES_DB=project2
+            - POSTGRES_USER=giztech
+            - POSTGRES_PASSWORD=gizumo
